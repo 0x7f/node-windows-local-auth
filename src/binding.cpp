@@ -37,13 +37,23 @@ namespace {
             std::wstring swPassword = std::wstring(password.begin(), password.end());
 
             HANDLE hdl;
-            if (!LogonUser(swUser.c_str(), swDomain.c_str(), swPassword.c_str(), LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &hdl)) {
-                SetErrorMessage(GetLastErrorAsString().c_str());
-                success = false;
+            if (LogonUser(swUser.c_str(), swDomain.c_str(), swPassword.c_str(), LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &hdl)) {
+                success = true;
                 return;
             }
 
-            success = true;
+            switch(::GetLastError()) {
+                // expected error cases
+                case ERROR_LOGON_FAILURE:
+                case ERROR_ACCOUNT_EXPIRED:
+                    success = false;
+                    break;
+                // unexpected error cases
+                default:
+                    SetErrorMessage(GetLastErrorAsString().c_str());
+                    success = false;
+                    break;
+            }
         }
 
         void HandleErrorCallback() {
