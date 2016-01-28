@@ -1,7 +1,7 @@
 {
   'targets': [
     {
-      'target_name': 'windows-local-auth',
+      'target_name': 'windows_local_auth',
       'product_extension': 'node',
       'type': 'shared_library',
       'include_dirs': [
