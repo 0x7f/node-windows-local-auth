@@ -4,10 +4,13 @@
 #include <nan.h>
 #include <v8.h>
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 namespace {
 
+#ifdef _WIN32
     std::string GetLastErrorAsString() {
         DWORD errorMessageID = ::GetLastError();
         if (errorMessageID == 0)
@@ -22,6 +25,7 @@ namespace {
         LocalFree(messageBuffer);
         return message;
     }
+#endif
 
     class CheckUserPassword : public Nan::AsyncWorker {
     public:
@@ -31,7 +35,7 @@ namespace {
         ~CheckUserPassword() { }
 
         virtual void Execute() {
-
+#ifdef _WIN32
             std::wstring swDomain = std::wstring(domain.begin(), domain.end());
             std::wstring swUser = std::wstring(user.begin(), user.end());
             std::wstring swPassword = std::wstring(password.begin(), password.end());
@@ -54,6 +58,10 @@ namespace {
                     success = false;
                     break;
             }
+#else
+            SetErrorMessage("Your operating system is not supported.");
+            success = false;
+#endif
         }
 
         void HandleErrorCallback() {
