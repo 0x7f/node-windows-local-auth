@@ -30,7 +30,7 @@ namespace {
     class CheckUserPassword : public Nan::AsyncWorker {
     public:
         CheckUserPassword(Nan::Callback *callback, const std::string& domain, const std::string& user, const std::string& password)
-            : Nan::AsyncWorker(callback), domain(domain), user(user), password(password), success(false) { }
+            : Nan::AsyncWorker(callback), domain(domain), user(user), password(password), success(false), administrator(false) { }
 
         ~CheckUserPassword() { }
 
@@ -39,28 +39,50 @@ namespace {
             std::wstring swDomain = std::wstring(domain.begin(), domain.end());
             std::wstring swUser = std::wstring(user.begin(), user.end());
             std::wstring swPassword = std::wstring(password.begin(), password.end());
+            LPCTSTR lpDomain = swDomain.c_str();
+            LPCTSTR lpUser = swUser.c_str();
+            LPCTSTR lpPass = swPassword.c_str();
 
             HANDLE hdl;
-            if (LogonUser(swUser.c_str(), swDomain.c_str(), swPassword.c_str(), LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &hdl)) {
-                success = true;
+            if (!LogonUser(lpUser, lpDomain, lpPass, LOGON32_LOGON_NETWORK, LOGON32_PROVIDER_DEFAULT, &hdl)) {
+                DWORD err = ::GetLastError();
+                if (err != ERROR_LOGON_FAILURE && err != ERROR_ACCOUNT_EXPIRED) {
+                    SetErrorMessage(GetLastErrorAsString().c_str());
+                }
                 return;
             }
 
-            switch(::GetLastError()) {
-                // expected error cases
-                case ERROR_LOGON_FAILURE:
-                case ERROR_ACCOUNT_EXPIRED:
-                    success = false;
-                    break;
-                // unexpected error cases
-                default:
-                    SetErrorMessage(GetLastErrorAsString().c_str());
-                    success = false;
-                    break;
+            if (!hdl) {
+                SetErrorMessage("LogonUser returned invalid token");
+                return;
             }
+
+            SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+            DWORD subAuth0 = SECURITY_BUILTIN_DOMAIN_RID;
+            DWORD subAuth1 = DOMAIN_ALIAS_RID_ADMINS;
+            PSID AdminGroup;
+            if (!AllocateAndInitializeSid(&NtAuthority, 2, subAuth0, subAuth1, 0, 0, 0, 0, 0, 0, &AdminGroup)) {
+                SetErrorMessage(GetLastErrorAsString().c_str());
+                return;
+            }
+
+            BOOL isAdmin;
+            BOOL rc = CheckTokenMembership(hdl, AdminGroup, &isAdmin);
+            FreeSid(AdminGroup);
+            if (!rc) {
+                SetErrorMessage(GetLastErrorAsString().c_str());
+                return;
+            }
+
+            if (!CloseHandle(hdl)) {
+                SetErrorMessage(GetLastErrorAsString().c_str());
+                return;
+            }
+
+            success = true;
+            administrator = isAdmin;
 #else
             SetErrorMessage("Your operating system is not supported.");
-            success = false;
 #endif
         }
 
@@ -72,9 +94,10 @@ namespace {
 
         void HandleOKCallback() {
             Nan::HandleScope scope;
-            v8::Local <v8::Value> returnValue = Nan::New<v8::Boolean>(success);
-            v8::Local <v8::Value> argv[] = { Nan::Null(), returnValue };
-            callback->Call(2, argv);
+            v8::Local <v8::Value> returnValueSuccess = Nan::New<v8::Boolean>(success);
+            v8::Local <v8::Value> returnValueAdmin = Nan::New<v8::Boolean>(administrator);
+            v8::Local <v8::Value> argv[] = { Nan::Null(), returnValueSuccess, returnValueAdmin };
+            callback->Call(3, argv);
         }
 
     private:
@@ -82,7 +105,7 @@ namespace {
         std::string user;
         std::string password;
         bool success;
-
+        bool administrator;
     };
 
     NAN_METHOD(checkUserPassword) {
