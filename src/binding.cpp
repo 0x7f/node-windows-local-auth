@@ -89,7 +89,7 @@ namespace {
         void HandleErrorCallback() {
             Nan::HandleScope scope;
             v8::Local <v8::Value> argv[] = { Nan::Error(ErrorMessage()) };
-            callback->Call(1, argv);
+            callback->Call(Nan::GetCurrentContext()->Global(), 1, argv, async_resource);
         }
 
         void HandleOKCallback() {
@@ -97,7 +97,7 @@ namespace {
             v8::Local <v8::Value> returnValueSuccess = Nan::New<v8::Boolean>(success);
             v8::Local <v8::Value> returnValueAdmin = Nan::New<v8::Boolean>(administrator);
             v8::Local <v8::Value> argv[] = { Nan::Null(), returnValueSuccess, returnValueAdmin };
-            callback->Call(3, argv);
+            callback->Call(Nan::GetCurrentContext()->Global(), 3, argv, async_resource);
         }
 
     private:
@@ -109,9 +109,9 @@ namespace {
     };
 
     NAN_METHOD(checkUserPassword) {
-        Nan::Utf8String domain(info[0]->ToString());
-        Nan::Utf8String user(info[1]->ToString());
-        Nan::Utf8String password(info[2]->ToString());
+        Nan::Utf8String domain(info[0]);
+        Nan::Utf8String user(info[1]);
+        Nan::Utf8String password(info[2]);
         Nan::Callback *callback = new Nan::Callback(info[3].As<v8::Function>());
         Nan::AsyncQueueWorker(new CheckUserPassword(callback, *domain, *user, *password));
     }
