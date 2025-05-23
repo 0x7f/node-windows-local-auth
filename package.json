@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "bindings": "^1.5.0",
-    "nan": "^2.14.1"
+    "nan": "^2.22.2"
   },
   "engines": {
     "node": ">=0.10"
