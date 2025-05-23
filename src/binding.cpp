@@ -25,6 +25,13 @@ namespace {
         LocalFree(messageBuffer);
         return message;
     }
+
+    std::wstring ConvertUtf8ToWide(const std::string& str) {
+        int count = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), NULL, 0);
+        std::wstring wstr(count, 0);
+        MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), &wstr[0], count);
+        return wstr;
+    }
 #endif
 
     class CheckUserPassword : public Nan::AsyncWorker {
@@ -36,9 +43,9 @@ namespace {
 
         virtual void Execute() {
 #ifdef _WIN32
-            std::wstring swDomain = std::wstring(domain.begin(), domain.end());
-            std::wstring swUser = std::wstring(user.begin(), user.end());
-            std::wstring swPassword = std::wstring(password.begin(), password.end());
+            std::wstring swDomain = ConvertUtf8ToWide(domain);
+            std::wstring swUser = ConvertUtf8ToWide(user);
+            std::wstring swPassword = ConvertUtf8ToWide(password);
             LPCTSTR lpDomain = swDomain.c_str();
             LPCTSTR lpUser = swUser.c_str();
             LPCTSTR lpPass = swPassword.c_str();

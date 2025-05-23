@@ -1,7 +1,7 @@
 {
   "name": "windows-local-auth",
   "description": "Authentication for node.js using local windows user accounts.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "main": "./lib",
   "homepage": "https://github.com/0x7f/node-windows-local-auth",
