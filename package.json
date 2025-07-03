@@ -10,9 +10,26 @@
     "url": "git://github.com/0x7f/node-windows-local-auth.git"
   },
   "dependencies": {
-    "nan": "^2.22.2"
+    "nan": "^2.22.2",
+    "bindings": "^1.5.0"
   },
   "engines": {
-    "node": ">=0.10"
-  }
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "install": "node-gyp rebuild"
+  },
+  "keywords": [
+    "windows",
+    "authentication",
+    "local",
+    "user",
+    "credentials",
+    "native",
+    "addon"
+  ],
+  "os": [
+    "win32"
+  ]
 }
