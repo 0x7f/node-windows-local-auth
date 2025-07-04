@@ -1,35 +1,18 @@
+const test = require('node:test');
+const assert = require('node:assert');   
 const windowsLocalAuth = require('../lib');
 
-console.log('Testing windows-local-auth module...');
+test('is running on supported platform', function() {
+    assert(windowsLocalAuth.IS_SUPPORTED_PLATFORM);
+});
 
-// Test 1: Module loads successfully
-console.log('✓ Module loaded successfully');
+test('is function available', function() {
+    assert(typeof windowsLocalAuth === 'function');
+});
 
-// Test 2: Check if running on supported platform
-console.log('Platform support:', windowsLocalAuth.IS_SUPPORTED_PLATFORM ? '✓ Supported' : '✗ Unsupported');
-
-// Test 3: Basic function availability
-if (typeof windowsLocalAuth === 'function') {
-    console.log('✓ Main function available');
-} else {
-    console.log('✗ Main function not available');
-    process.exit(1);
-}
-
-// Test 4: Platform-specific functionality
-if (process.platform === 'win32') {
-    console.log('✓ Running on Windows - full functionality available');
-    
-    // Test with invalid credentials (should not crash)
+test('fails with invalid username', function(t, done) {
     windowsLocalAuth('invaliduser', 'invalidpassword', function(err, success, isAdmin) {
-        if (err) {
-            console.log('✓ Error handling works correctly:', err.message);
-        } else {
-            console.log('Result:', { success, isAdmin });
-        }
-        console.log('✓ All basic tests passed');
+        assert(success === false);
+        done(); 
     });
-} else {
-    console.log('⚠ Running on non-Windows platform - limited functionality');
-    console.log('✓ All basic tests passed');
-}
+})
